@@ -1,0 +1,38 @@
+.home-page {
+    font-family: "Montserrat", sans-serif;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Playfair Display", serif;
+    margin-bottom: 1rem;
+  }
+  
+  section {
+    padding: 5rem 0;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    background-color: #c59d5f;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid #c59d5f;
+  }
+  
+  .cta-button:hover {
+    background-color: transparent;
+    color: #c59d5f;
+  }
+  
+  
