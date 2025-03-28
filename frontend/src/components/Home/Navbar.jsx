@@ -1,22 +1,22 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
 import "../../styles/Navbar.css"
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const navbarRef = useRef(null)
 
   useEffect(() => {
-    // Check if user is logged in
     const token = localStorage.getItem("token")
     setIsLoggedIn(!!token)
 
-    // Add scroll event listener
     const handleScroll = () => {
-      if (window.scrollY > 50) {
+      if (window.scrollY > 10) {
         setIsScrolled(true)
       } else {
         setIsScrolled(false)
@@ -35,14 +35,10 @@ const Navbar = () => {
     setIsMobileMenuOpen(false)
   }
 
-  // Improved smooth scroll function
   const scrollToSection = (e, sectionId) => {
     e.preventDefault()
-
-    // Close mobile menu if open
     closeMobileMenu()
 
-    // If it's the home link, scroll to top
     if (!sectionId) {
       window.scrollTo({
         top: 0,
@@ -51,109 +47,151 @@ const Navbar = () => {
       return
     }
 
-    // Use setTimeout to ensure DOM is fully loaded
     setTimeout(() => {
-      // Find the section element
       const section = document.getElementById(sectionId)
-      
       if (section) {
-        // Get the position of the element relative to the viewport
         const rect = section.getBoundingClientRect()
-        
-        // Calculate the absolute position and adjust for navbar height (80px)
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-        const offsetPosition = rect.top + scrollTop - 80
+        const offsetPosition = rect.top + scrollTop - (isMobileMenuOpen ? 200 : 80)
         
-        // Scroll to the element
         window.scrollTo({
           top: offsetPosition,
           behavior: 'smooth'
         })
-        
-        console.log(`Scrolled to section: ${sectionId} at position ${offsetPosition}`)
-      } else {
-        console.error(`Section not found: ${sectionId}`)
-        // Log all available IDs for debugging
-        const allIds = Array.from(document.querySelectorAll('[id]')).map(el => el.id)
-        console.log('Available IDs:', allIds)
       }
-    }, 100) // Small delay to ensure DOM is ready
+    }, 100)
   }
 
-  return (
-    <nav className={`navbar ${isScrolled ? "scrolled" : ""}`}>
-      <div className="navbar-container">
-        <Link to="/" className="navbar-logo" onClick={(e) => scrollToSection(e, null)}>
-          BARBER<span>SHOP</span>
-        </Link>
+  const navLinks = [
+    { id: 1, name: "Home", section: null },
+    { id: 2, name: "Book Now", section: "booking" },
+    { id: 3, name: "Our Story", section: "story" },
+    { id: 4, name: "Newsletter", section: "newsletter" },
+  ]
 
-        <div className="menu-icon" onClick={toggleMobileMenu}>
-          <div className={`menu-icon-bar ${isMobileMenuOpen ? "open" : ""}`}></div>
-          <div className={`menu-icon-bar ${isMobileMenuOpen ? "open" : ""}`}></div>
-          <div className={`menu-icon-bar ${isMobileMenuOpen ? "open" : ""}`}></div>
-        </div>
+  return (
+    <motion.nav 
+      ref={navbarRef}
+      className={`navbar ${isScrolled ? "scrolled" : ""}`}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.8, ease: [0.6, 0.05, -0.01, 0.9] }}
+    >
+      <div className="navbar-container">
+        <motion.div whileHover={{ scale: 1.0 }}>
+          <Link to="/" className="navbar-logo" onClick={(e) => scrollToSection(e, null)}>
+            BARBER<span>SHOP</span>
+          </Link>
+        </motion.div>
+
+        <motion.div 
+          className="menu-icon" 
+          onClick={toggleMobileMenu}
+          whileTap={{ scale: 0.9 }}
+        >
+          {[1, 2, 3].map((i) => (
+            <motion.div
+              key={i}
+              className={`menu-icon-bar ${isMobileMenuOpen ? "open" : ""}`}
+              animate={
+                isMobileMenuOpen
+                  ? i === 1
+                    ? { rotate: 45, y: 9 }
+                    : i === 2
+                    ? { opacity: 0 }
+                    : { rotate: -45, y: -9 }
+                  : { rotate: 0, y: 0, opacity: 1 }
+              }
+              transition={{ duration: 0.3 }}
+            />
+          ))}
+        </motion.div>
 
         <ul className={`nav-menu ${isMobileMenuOpen ? "active" : ""}`}>
-          <li className="nav-item">
-            <a href="#" className="nav-link" onClick={(e) => scrollToSection(e, null)}>
-              Home
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#booking" className="nav-link" onClick={(e) => scrollToSection(e, "booking")}>
-              Book Now
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#story" className="nav-link" onClick={(e) => scrollToSection(e, "story")}>
-              Our Story
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#newsletter" className="nav-link" onClick={(e) => scrollToSection(e, "newsletter")}>
-              Newsletter
-            </a>
-          </li>
-          {isLoggedIn ? (
-            <>
-              <li className="nav-item">
-                <Link to="/bookings" className="nav-link" onClick={closeMobileMenu}>
-                  My Bookings
-                </Link>
-              </li>
-              <li className="nav-item">
-                <a
-                  href="#"
-                  className="nav-link"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    localStorage.removeItem("token")
-                    setIsLoggedIn(false)
-                    closeMobileMenu()
-                    window.location.reload()
-                  }}
+          {navLinks.map((link) => (
+            <motion.li 
+              key={link.id}
+              className="nav-item"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <a 
+                href={`#${link.section}`} 
+                className="nav-link" 
+                onClick={(e) => scrollToSection(e, link.section)}
+              >
+                {link.name}
+              </a>
+            </motion.li>
+          ))}
+
+          <AnimatePresence>
+            {isLoggedIn ? (
+              <>
+                <motion.li 
+                  className="nav-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                 >
-                  Logout
-                </a>
-              </li>
-            </>
-          ) : (
-            <>
-              <li className="nav-item">
-                <Link to="/login" className="nav-link" onClick={closeMobileMenu}>
-                  Login
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/signup" className="nav-link signup-link" onClick={closeMobileMenu}>
-                  Sign Up
-                </Link>
-              </li>
-            </>
-          )}
+                  <Link to="/bookings" className="nav-link" onClick={closeMobileMenu}>
+                    My Bookings
+                  </Link>
+                </motion.li>
+                <motion.li 
+                  className="nav-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <a
+                    href="#"
+                    className="nav-link"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      localStorage.removeItem("token")
+                      setIsLoggedIn(false)
+                      closeMobileMenu()
+                      window.location.reload()
+                    }}
+                  >
+                    Logout
+                  </a>
+                </motion.li>
+              </>
+            ) : (
+              <>
+                <motion.li 
+                  className="nav-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <Link to="/login" className="nav-link" onClick={closeMobileMenu}>
+                    Login
+                  </Link>
+                </motion.li>
+                <motion.li 
+                  className="nav-item"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <Link 
+                    to="/signup" 
+                    className="nav-link signup-link" 
+                    onClick={closeMobileMenu}
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    Sign Up
+                  </Link>
+                </motion.li>
+              </>
+            )}
+          </AnimatePresence>
         </ul>
       </div>
-    </nav>
+    </motion.nav>
   )
 }
 
